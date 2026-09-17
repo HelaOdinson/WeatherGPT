@@ -1,0 +1,1 @@
+export { generateWeatherResponse } from './aiService.js';
