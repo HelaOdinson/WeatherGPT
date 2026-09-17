@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 type Role = "user" | "ai"
 
@@ -101,6 +101,48 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+
+  const [weather, setWeather] = useState(WEATHER)
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        setError("")
+
+        const response = await fetch(
+          "http://127.0.0.1:8000/weather?location=Alappuzha"
+        )
+
+        if (!response.ok) {
+          throw new Error(`Weather request failed: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        setWeather({
+          ...WEATHER,
+          city: data.location,
+          temp: Math.round(data.temperature),
+          condition: data.condition,
+          conditionCode: data.condition.toLowerCase().replaceAll(" ", "-"),
+          updated: "Updated just now",
+          stats: [
+            { label: "Rain", value: `${data.rain_probability}%` },
+            { label: "Humidity", value: "N/A" },
+            { label: "Wind", value: `${data.wind_speed} km/h` },
+            { label: "Visibility", value: "N/A" },
+          ],
+        })
+      } catch (err) {
+        console.error("Weather fetch failed:", err)
+        setError(
+          "Unable to load live weather. Please make sure the backend server is running."
+        )
+      }
+    }
+
+    fetchWeather()
+  }, [])
 
   const sendQuestion = async (question: string) => {
     const trimmedQuestion = question.trim()
@@ -256,26 +298,26 @@ export default function App() {
 
               <div className="mt-1 flex items-center gap-3">
                 <h2 className="text-2xl font-semibold text-white">
-                  {WEATHER.city}
+                  {weather.city}
                 </h2>
 
                 <span className="text-sm text-slate-500">
-                  {WEATHER.region}
+                  {weather.region}
                 </span>
               </div>
 
               <p className="mt-1 text-xs text-slate-500">
-                {WEATHER.updated}
+                {weather.updated}
               </p>
             </div>
 
             <div className="flex items-center gap-5">
-              <WeatherEmoji code={WEATHER.conditionCode} />
+              <WeatherEmoji code={weather.conditionCode} />
 
               <div>
                 <div className="flex items-start">
                   <span className="text-6xl font-light tracking-tighter text-white">
-                    {WEATHER.temp}
+                    {weather.temp}
                   </span>
 
                   <span className="mt-2 text-xl text-slate-500">
@@ -284,7 +326,7 @@ export default function App() {
                 </div>
 
                 <p className="text-sm text-slate-400">
-                  {WEATHER.condition}
+                  {weather.condition}
                 </p>
               </div>
             </div>
@@ -295,7 +337,7 @@ export default function App() {
           {/* WEATHER STATS */}
           <div className="mt-6 grid grid-cols-2 gap-3 border-t border-white/5 pt-5 sm:grid-cols-4">
 
-            {WEATHER.stats.map((stat) => (
+            {weather.stats.map((stat) => (
               <div
                 key={stat.label}
                 className="rounded-xl bg-white/[0.025] p-3"
